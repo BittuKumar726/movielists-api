@@ -1,1 +1,1 @@
-export const DB_NAME = "bkstore";
+export const DB_NAME = "moviestore";

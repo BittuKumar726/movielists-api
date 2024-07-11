@@ -28,49 +28,40 @@ const generateAccessAndRefreshTokens = async (userId) => {
 // Register user
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from frontend
-  const { fullName, email, username, password } = req.body;
+  const { fullName, email, password } = req.body;
 
-  if (
-    [fullName, email, username, password].some((field) => field?.trim() === "")
-  ) {
+  if ([fullName, email, password].some((field) => field?.trim() === "")) {
     return apiResponseWithStatusCode(res, 400, "All fields are required");
-    // throw new ApiError(400, "All fields are required");
   }
 
   const existedUser = await User.findOne({
-    $or: [{ email }, { username }],
+    email,
   });
 
   if (existedUser) {
     return apiResponseWithStatusCode(
       res,
       409,
-      "User with email or username already exists"
+      "User with email already exists"
     );
-
-    // throw new ApiError(409, "User with email or username already exists");
   }
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
 
-  // if (!avatarLocalPath) {
-  //   throw new ApiError(400, "Avatar file is required");
-  // }
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is required");
+  }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-  // if (!avatar) {
-  //   throw new ApiError(400, "Avatar upload failed");
-  // }
+  if (!avatar) {
+    throw new ApiError(400, "Avatar upload failed");
+  }
 
   const user = await User.create({
     fullName,
     avatar: avatar?.url || "",
-    coverImage: coverImage?.url || "",
     email,
-    username: username.toLowerCase(),
     password,
   });
 
@@ -92,34 +83,28 @@ const registerUser = asyncHandler(async (req, res) => {
     "User registered successfully!!",
     creaedUser
   );
-  // return res
-  //   .status(201)
-  //   .json(new ApiResponse(200, creaedUser, "User registered successfully!!"));
 });
 
 // Login user
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, username, password } = req.body;
-  console.log({ email, username, password });
-  if (!username && !email) {
-    return apiResponseWithStatusCode(res, 400, "Email or username is required");
-    // throw new ApiError(400, "Email or username is required");
+  const { email, password } = req.body;
+  console.log({ email, password });
+  if (!email) {
+    return apiResponseWithStatusCode(res, 400, "Email is required");
   }
 
   const user = await User.findOne({
-    $or: [{ email }, { username }],
+    email: email,
   });
 
   if (!user) {
     return apiResponseWithStatusCode(res, 404, "User not found");
-    // return res.status(404).json(new ApiResponse(404, {}, "User not found"));
   }
 
   const isPasswordCorrect = await user.isPasswordCorrect(password);
 
   if (!isPasswordCorrect) {
     return apiResponseWithStatusCode(res, 401, "Incorrect password");
-    // return res.status(401).json(new ApiResponse(401, {}, "Incorrect password"));
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
