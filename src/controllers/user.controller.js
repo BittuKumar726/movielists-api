@@ -25,6 +25,14 @@ const generateAccessAndRefreshTokens = async (userId) => {
   }
 };
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+  const user = res?.user || {};
+  if (!user._id) {
+    return apiResponseWithStatusCode(res, 401, "Unauthorized request");
+  }
+  return apiResponseWithStatusCode(res, 200, "User found", user);
+});
+
 // Register user
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from frontend
@@ -47,15 +55,15 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
-
+  console.log({ avatarLocalPath });
   if (!avatarLocalPath) {
-    throw new ApiError(400, "Avatar file is required");
+    return apiResponseWithStatusCode(res, 400, "User photo is required");
   }
 
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar) {
-    throw new ApiError(400, "Avatar upload failed");
+    return apiResponseWithStatusCode(res, 400, "Avatar upload failed");
   }
 
   const user = await User.create({
@@ -76,7 +84,6 @@ const registerUser = asyncHandler(async (req, res) => {
       "Something went wrong while registering user"
     );
   }
-  console.log("register");
   return apiResponseWithStatusCode(
     res,
     200,
@@ -96,6 +103,8 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({
     email: email,
   });
+
+  console.log({ user });
 
   if (!user) {
     return apiResponseWithStatusCode(res, 404, "User not found");
@@ -163,4 +172,4 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "User logged out successfully!!"));
 });
 
-export { registerUser, loginUser, logoutUser };
+export { getCurrentUser, registerUser, loginUser, logoutUser };

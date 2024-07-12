@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getCurrentUser,
   loginUser,
   logoutUser,
   registerUser,
@@ -16,16 +17,15 @@ router.route("/register").post(
       name: "avatar",
       maxCount: 1,
     },
-    {
-      name: "coverImage",
-      maxCount: 1,
-    },
   ]),
   registerUser
 );
 
 // Login route
 router.route("/login").post(loginUser);
+
+// Current user route
+router.route("/details").get(verifyJWT, getCurrentUser);
 
 // ---------------Secured routes-----------------
 // Logout route
